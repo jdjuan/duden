@@ -6,8 +6,12 @@ const PORT = process.env.PORT || 5000
 
 async function searchWord(word = 'Buch') {
   const formattedWord = word.charAt(0).toUpperCase() + word.slice(1);
-  const searchUrl = "https://www.duden.de/suchen/dudenonline/" + formattedWord;
-  const { data } = await axios(searchUrl, { responseType: "text" }).catch(() => {
+  const wordEncoded = encodeURIComponent(formattedWord);
+  const searchUrl = "https://www.duden.de/suchen/dudenonline/" + wordEncoded;
+  const { data } = await axios(searchUrl, { responseType: "text" }).catch((error) => {
+    console.log('---------------');
+    console.log('Fetching Error:');
+    console.log(error.message);
     throw 'That did not work 🙃, but we are to blame, not you 🙂. Notify the creator please 🙏 Twitter: @jdjuan'
   });
   try {
@@ -18,6 +22,9 @@ async function searchWord(word = 'Buch') {
     const response = { title, gender, description: description.trim() };
     return response;
   } catch (error) {
+    console.log('---------------');
+    console.log('Parsing Error:');
+    console.log(error.message);
     throw 'We could not find the word you were looking for 🤓';
   }
 }
