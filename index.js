@@ -1,18 +1,17 @@
 const express = require('express')
 const axios = require("axios");
 const cheerio = require("cheerio");
-var helmet = require('helmet');
+const cors = require('cors')
+const helmet = require('helmet');
 const PORT = process.env.PORT || 5000
 
-async function searchWord(word = 'Buch') {
+async function searchWord(word) {
   const formattedWord = word.charAt(0).toUpperCase() + word.slice(1);
   const wordEncoded = encodeURIComponent(formattedWord);
   const searchUrl = "https://www.duden.de/suchen/dudenonline/" + wordEncoded;
-  const { data } = await axios(searchUrl, { responseType: "text" }).catch((error) => {
-    console.log('---------------');
-    console.log('Fetching Error:');
-    console.log(error.message);
-    throw 'That did not work 🙃, but we are to blame, not you 🙂. Notify the creator please 🙏 Twitter: @jdjuan'
+  const { data } = await axios(searchUrl, { responseType: "text" }).catch(({ message }) => {
+    error = { id: 0, type: 'Fetching Error', message };
+    throw error;
   });
   try {
     $ = cheerio.load(data);
@@ -21,31 +20,23 @@ async function searchWord(word = 'Buch') {
     const gender = description.split(", ")[1].split(" ")[0];
     const response = { title, gender, description: description.trim() };
     return response;
-  } catch (error) {
-    console.log('---------------');
-    console.log('Parsing Error:');
-    console.log(error.message);
-    throw 'We could not find the word you were looking for 🤓';
+  } catch ({ message }) {
+    error = { id: 1, type: 'Parsing Error', message };
+    throw error;
   }
 }
 
 express()
   .use(helmet())
-  .get("/search/:word", async ({ params }, res) => {
-    console.log('======================');
+  .use(cors())
+  .get("/search/:word", ({ params }, res) => {
     const word = params.word;
-    let error;
-    let response;
-    try {
-      response = await searchWord(word)
-    } catch (error) {
-      response = error;
+    console.log(`🔍🔍🔍 = ${word}`);
+    searchWord(word).then((response) => {
+      res.status(200).send(response);
+    }).catch((error) => {
       console.log(error);
-    }
-    res.status(200).send({
-      success: "true",
-      response,
-      error
+      res.status(500).send(error);
     });
   })
   .get('/', (req, res) => res.redirect('/search/buch'))
