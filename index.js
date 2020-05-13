@@ -5,6 +5,7 @@ const cors = require('cors')
 const helmet = require('helmet');
 const NodeCache = require("node-cache");
 const dictionaryCache = new NodeCache();
+const defaultSearchUrl = 'https://www.duden.de'
 const PORT = process.env.PORT || 5000
 
 const removeHyphens = (value) => {
@@ -32,13 +33,14 @@ async function searchWord(word) {
       throw { id: 0, type: 'Fetching Error', message };
     });
     $ = cheerio.load(data);
+    const link = defaultSearchUrl + $(".vignette__label").first().attr('href');
     let title = $(".vignette__label strong").contents().first().text();
     const description = $(".vignette__snippet").contents().first().text().trim();
     if (isNoun(description)) {
       try {
         title = removeHyphens(title);
         const gender = description.split(", ")[1].split(" ")[0];
-        const result = { title, gender, description };
+        const result = { title, gender, description, link };
         dictionaryCache.set(formattedWord, result);
         return result;
       } catch ({ message }) {
