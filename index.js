@@ -50,13 +50,12 @@ express()
   .use(cors())
   .get("/search/:word", ({ params }, res) => {
     const word = params.word;
-    console.log('\n');
-    console.log(`🔍🔍🔍 = ${word}`);
+    console.log(`\n🔍🔍🔍 = ${word}`);
     searchWord(word).then((response) => {
       console.log(`👉👉👉 ${JSON.stringify(response)}`);
       res.status(200).send(response);
     }).catch((error) => {
-      console.log(error);
+      console.log(`🔴🔴🔴 ${JSON.stringify(error)}`);
       res.status(500).send(error);
     });
   })
