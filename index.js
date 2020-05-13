@@ -40,7 +40,7 @@ async function searchWord(word) {
         throw { id: 1, type: 'Parsing Error', message };
       }
     } else {
-      throw error = { id: 2, type: 'Search Error', message: 'The found word is not a noun' };
+      return { id: 2, type: 'Search Error', message: 'The found word is not a noun' };
     }
   }
 }
