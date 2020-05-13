@@ -16,12 +16,12 @@ const isCached = (word) => {
 }
 
 async function searchWord(word) {
-  const cachedResult = isCached(word);
+  const formattedWord = word.charAt(0).toUpperCase() + word.slice(1);
+  const cachedResult = isCached(formattedWord);
   if (cachedResult) {
     console.log('📚📚📚');
     return cachedResult;
   } else {
-    const formattedWord = word.charAt(0).toUpperCase() + word.slice(1);
     const wordEncoded = encodeURIComponent(formattedWord);
     const searchUrl = "https://www.duden.de/suchen/dudenonline/" + wordEncoded;
     const { data } = await axios(searchUrl, { responseType: "text" }).catch(({ message }) => {
@@ -34,7 +34,7 @@ async function searchWord(word) {
       try {
         const gender = description.split(", ")[1].split(" ")[0];
         const result = { title, gender, description };
-        dictionaryCache.set(word, result);
+        dictionaryCache.set(formattedWord, result);
         return result;
       } catch ({ message }) {
         throw { id: 1, type: 'Parsing Error', message };
@@ -58,6 +58,9 @@ express()
       console.log(`🔴🔴🔴 ${JSON.stringify(error)}`);
       res.status(500).send(error);
     });
+  })
+  .get("/dictionary", (req, res) => {
+    res.status(200).send(dictionaryCache.keys());
   })
   .get('/', (req, res) => res.redirect('/search/buch'))
   .listen(PORT, () => console.log(`Listening on ${PORT}`))
