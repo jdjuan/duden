@@ -7,6 +7,10 @@ const NodeCache = require("node-cache");
 const dictionaryCache = new NodeCache();
 const PORT = process.env.PORT || 5000
 
+const removeHyphens = (value) => {
+  return value.replace(/[\u00AD\u002D\u2011]+/g, '');
+}
+
 const isNoun = (description) => {
   return description.toLowerCase().startsWith('substantiv');
 }
@@ -28,10 +32,11 @@ async function searchWord(word) {
       throw { id: 0, type: 'Fetching Error', message };
     });
     $ = cheerio.load(data);
-    const title = $(".vignette__label strong").contents().first().text();
+    let title = $(".vignette__label strong").contents().first().text();
     const description = $(".vignette__snippet").contents().first().text().trim();
     if (isNoun(description)) {
       try {
+        title = removeHyphens(title);
         const gender = description.split(", ")[1].split(" ")[0];
         const result = { title, gender, description };
         dictionaryCache.set(formattedWord, result);
