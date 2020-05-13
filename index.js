@@ -3,26 +3,45 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const cors = require('cors')
 const helmet = require('helmet');
+const NodeCache = require("node-cache");
+const dictionaryCache = new NodeCache();
 const PORT = process.env.PORT || 5000
 
+const isNoun = (description) => {
+  return description.toLowerCase().startsWith('substantiv');
+}
+
+const isCached = (word) => {
+  return dictionaryCache.get(word);
+}
+
 async function searchWord(word) {
-  const formattedWord = word.charAt(0).toUpperCase() + word.slice(1);
-  const wordEncoded = encodeURIComponent(formattedWord);
-  const searchUrl = "https://www.duden.de/suchen/dudenonline/" + wordEncoded;
-  const { data } = await axios(searchUrl, { responseType: "text" }).catch(({ message }) => {
-    error = { id: 0, type: 'Fetching Error', message };
-    throw error;
-  });
-  try {
+  const cachedResult = isCached(word);
+  if (cachedResult) {
+    console.log('📚📚📚');
+    return cachedResult;
+  } else {
+    const formattedWord = word.charAt(0).toUpperCase() + word.slice(1);
+    const wordEncoded = encodeURIComponent(formattedWord);
+    const searchUrl = "https://www.duden.de/suchen/dudenonline/" + wordEncoded;
+    const { data } = await axios(searchUrl, { responseType: "text" }).catch(({ message }) => {
+      throw { id: 0, type: 'Fetching Error', message };
+    });
     $ = cheerio.load(data);
     const title = $(".vignette__label strong").contents().first().text();
-    const description = $(".vignette__snippet").contents().first().text();
-    const gender = description.split(", ")[1].split(" ")[0];
-    const response = { title, gender, description: description.trim() };
-    return response;
-  } catch ({ message }) {
-    error = { id: 1, type: 'Parsing Error', message };
-    throw error;
+    const description = $(".vignette__snippet").contents().first().text().trim();
+    if (isNoun(description)) {
+      try {
+        const gender = description.split(", ")[1].split(" ")[0];
+        const result = { title, gender, description };
+        dictionaryCache.set(word, result);
+        return result;
+      } catch ({ message }) {
+        throw { id: 1, type: 'Parsing Error', message };
+      }
+    } else {
+      throw error = { id: 2, type: 'Search Error', message: 'The found word is not a noun' };
+    }
   }
 }
 
@@ -31,8 +50,10 @@ express()
   .use(cors())
   .get("/search/:word", ({ params }, res) => {
     const word = params.word;
+    console.log('\n');
     console.log(`🔍🔍🔍 = ${word}`);
     searchWord(word).then((response) => {
+      console.log(`👉👉👉 ${JSON.stringify(response)}`);
       res.status(200).send(response);
     }).catch((error) => {
       console.log(error);
