@@ -82,9 +82,11 @@ async function searchWord(word) {
   } else {
     const wordEncoded = encodeURIComponent(formattedWord);
     const searchUrl = "https://www.duden.de/suchen/dudenonline/" + wordEncoded;
+    console.log({ searchUrl });
     const { data } = await axios(searchUrl, { responseType: "text" }).catch(({ message }) => {
       throw { id: 0, type: 'Fetching Error', message };
     });
+
     $ = cheerio.load(data);
     if (!isNoun()) {
       throw { id: 2, type: 'Search Error', message: 'The found word is not a noun' };
@@ -127,6 +129,11 @@ express()
     });
   })
   .get("/dictionary", (req, res) => {
+    res.status(200).send(dictionaryCache.keys());
+  })
+  .get("/delete/:key", ({ params }, res) => {
+    const key = params.key;
+    dictionaryCache.del(key);
     res.status(200).send(dictionaryCache.keys());
   })
   .get('/', (req, res) => res.redirect('/search/see'))
