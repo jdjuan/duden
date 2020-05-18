@@ -6,7 +6,7 @@ const helmet = require('helmet');
 const NodeCache = require("node-cache");
 const dictionaryCache = new NodeCache();
 const defaultSearchUrl = 'https://www.duden.de'
-const genderKeys = { der: 'substantiv, maskulin', die: 'substantiv, feminin', das: 'substantiv, neutrum' }
+const genderKeys = { der: ', maskulin', die: ', feminin', das: ', neutrum' }
 const PORT = process.env.PORT || 5000;
 let $;
 
