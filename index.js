@@ -77,12 +77,10 @@ async function searchWord(word) {
   const formattedWord = word.charAt(0).toUpperCase() + word.slice(1);
   const cachedResult = isCached(formattedWord);
   if (cachedResult) {
-    console.log('📚📚📚');
     return cachedResult;
   } else {
     const wordEncoded = encodeURIComponent(formattedWord);
     const searchUrl = "https://www.duden.de/suchen/dudenonline/" + wordEncoded;
-    console.log({ searchUrl });
     const { data } = await axios(searchUrl, { responseType: "text" }).catch(({ message }) => {
       throw { id: 0, type: 'Fetching Error', message };
     });
@@ -114,6 +112,27 @@ async function searchWord(word) {
   }
 }
 
+const dumpDictionary = () => {
+  const result = {};
+  dictionaryCache.keys().forEach(key => {
+    result[key] = dictionaryCache.get(key);
+  });
+  return result;
+}
+
+const addExceptions = () => {
+  dictionaryCache.set('Mann', {
+    title: 'Mann',
+    isHomonym: false,
+    responseType: 900,
+    link: 'https://www.duden.de/rechtschreibung/Mann_Person_Gatte_Anrede',
+    description: 'Substantiv, maskulin – 1. erwachsene Person männlichen Geschlechts; 2. hebt weniger die rechtliche Bindung … 3. Lehns-, Gefolgsleute',
+    gender: { der: true, die: false, das: false }
+  });
+}
+
+
+addExceptions();
 express()
   .use(helmet())
   .use(cors())
@@ -129,7 +148,7 @@ express()
     });
   })
   .get("/dictionary", (req, res) => {
-    res.status(200).send(dictionaryCache.keys());
+    res.status(200).send(dumpDictionary());
   })
   .get("/delete/:key", ({ params }, res) => {
     const key = params.key;
